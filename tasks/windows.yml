@@ -1,0 +1,182 @@
+- name: Require Ansible 2.5.1
+  assert:
+    that: "ansible_version.full | version_compare('2.5.1', '>=')"
+    msg: "This playbook requires Ansible 2.5.1+"
+
+- name: Raise WinRM memory limit
+  win_shell: winrm set winrm/config/winrs '@{MaxMemoryPerShellMB="1000"}'
+- name: Update VirtualBox Guest Additions
+  win_chocolatey: name=vboxguestadditions.install state=present
+  become: yes
+  become_method: runas
+  notify: reboot
+- name: Install kb2919355
+  win_chocolatey: name=kb2919355 state=present
+  become: yes
+  become_method: runas
+  notify: reboot
+- name: Disable Bitvise SSH (if present)
+  win_service: name=BvSshServer start_mode=disabled state=stopped
+  register: result
+  failed_when: result.exists and (result.start_mode != 'disabled' or result.state != 'stopped')
+- name: Install Cygwin
+  win_chocolatey: name=cygwin state=present
+- name: Put Cygwin in the path
+  win_path:
+    elements:
+      - C:\tools\cygwin\bin
+- name: Install cyg-get
+  win_chocolatey: name=cyg-get state=present
+- name: Install git
+  win_shell: cyg-get -arch x86_64 git
+  args:
+    creates: C:\tools\cygwin\bin\git.exe
+- name: Install openssh
+  win_shell: cyg-get -arch x86_64 openssh
+  args:
+    creates: C:\tools\cygwin\usr\sbin\sshd.exe
+- name: Install cygrunsrv
+  win_shell: cyg-get -arch x86_64 cygrunsrv
+  args:
+    creates: C:\tools\cygwin\bin\cygrunsrv.exe
+- name: Register cyglsa
+  win_shell: bash.exe -l -c
+    "echo -e 'yes\nno\nno' | cyglsa-config"
+  args:
+    creates: C:\tools\cygwin\bin\cyglsa
+  notify: reboot
+- name: Configure OpenSSH
+  win_shell: bash.exe -l -c
+    "ssh-host-config -y -c ntsec -w {{
+      lookup('password', '/dev/null length=15 chars=ascii_letters,digits')
+    }}"
+  args:
+    creates: C:\tools\cygwin\etc\sshd_config
+- name: Start OpenSSH service
+  win_service: name=sshd start_mode=auto state=started
+- name: Install GitLab Runner
+  win_chocolatey: name=gitlab-runner state=present
+- name: Create builder user
+  win_user: name=builder password=builder user_cannot_change_password=yes
+- name: Learn Git server SSH key
+  win_shell: bash.exe -l -c
+    "mkdir -p ~builder/.ssh && ssh-keyscan {{ git_server | quote }} >> ~builder/.ssh/known_hosts && chown -R builder ~builder"
+  args:
+    creates: C:\tools\cygwin\home\builder\.ssh\known_hosts
+- meta: flush_handlers # Allow a reboot to occur
+
+- name: Install CMake
+  win_chocolatey: name=cmake state=present
+- name: Put CMake in the path
+  win_path:
+    elements:
+      - C:\Program Files\CMake\bin
+- name: Install Python
+  win_chocolatey: name=python state=present
+- name: Install .NET 4.6.1 (needed for Windows SDK)
+  win_chocolatey: name=dotnet4.6.1 state=present
+  become: yes
+  become_method: runas
+  register: dotnet_install
+- name: Reboot (for .NET)
+  win_reboot:
+  when: dotnet_install.changed
+- name: Install Windows SDK 8.1
+  win_chocolatey: name=windows-sdk-8.1 state=present
+  become: yes
+  become_method: runas
+- name: Install Visual Studio 2015 Build Tools
+  win_chocolatey: name=vcbuildtools state=present
+  become: yes
+  become_method: runas
+- name: Wait for MSBuild to finish installing
+  win_wait_for:
+    path: 'C:\Program Files (x86)\MSBuild\14.0\Bin'
+- name: Put MSBuild in the path
+  win_path:
+    elements:
+      - 'C:\Program Files (x86)\MSBuild\14.0\Bin'
+- name: Install make
+  win_shell: cyg-get -arch x86_64 make
+  args:
+    creates: C:\tools\cygwin\bin\make.exe
+- name: Install patch
+  win_shell: cyg-get -arch x86_64 patch
+  args:
+    creates: C:\tools\cygwin\bin\patch.exe
+- name: Install wget
+  win_shell: cyg-get -arch x86_64 wget
+  args:
+    creates: C:\tools\cygwin\bin\wget.exe
+- name: Install unzip
+  win_shell: cyg-get -arch x86_64 unzip
+  args:
+    creates: C:\tools\cygwin\bin\unzip.exe
+- name: Check for LLVM
+  win_stat:
+    path: C:\tools\llvm\
+  register: llvm_path
+- name: Download LLVM
+  win_get_url:
+    dest: C:\tools\LLVM-{{ llvm_version }}-win64.exe
+    url: http://releases.llvm.org/{{ llvm_version }}/LLVM-{{ llvm_version }}-win64.exe
+    force: false
+  when: not llvm_path.stat.exists
+- name: Install LLVM
+  win_shell: C:\tools\LLVM-{{ llvm_version }}-win64.exe /S /D=C:\tools\llvm
+  args:
+    creates: C:\tools\llvm\bin\clang.exe
+- name: Delete LLVM installer
+  win_file:
+    path: C:\tools\LLVM-{{ llvm_version }}-win64.exe
+    state: absent
+- name: Put LLVM in the path
+  win_path:
+    elements:
+      - C:\tools\llvm\bin
+- name: Check for LLVM MSBuild integration
+  win_stat:
+    path: C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\v140\LLVM.Cpp.Common.props
+  register: llvm_path
+- name: Copy in LLVM MSBuild integration
+  win_copy:
+    src: llvm.vsix
+    dest: C:\tools\llvm-vsix.zip
+  register: vsix_copy
+  when: not llvm_path.stat.exists
+- name: Extract LLVM MSBuild integration
+  win_unzip:
+    src: C:\tools\llvm-vsix.zip
+    dest: C:\tools\llvm-vsix
+    delete_archive: yes
+  when: vsix_copy.changed
+- name: Install LLVM MSBuild integration
+  win_copy:
+    remote_src: true
+    src: C:\tools\llvm-vsix\$VCTargets\
+    dest: C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\v140
+  when: vsix_copy.changed
+- name: Delete LLVM MSBuild integration extraction directory
+  win_file:
+    path: C:\tools\llvm-vsix
+    state: absent
+
+- name: Install updates
+  win_updates: reboot=yes
+  register: update_result
+- name: Reboot after updating
+  win_reboot: reboot_timeout=3600
+  when: update_result.changed
+
+- name: Install SDelete
+  win_chocolatey: name=sdelete state=present ignore_checksums=yes
+  become: yes
+  become_method: runas
+- name: Cleanup WinSXS update debris
+  win_shell: Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase
+- name: Defragment
+  win_defrag:
+    include_volumes: C
+    priority: normal
+- name: Zero free space
+  win_shell: 'sdelete -z c:'

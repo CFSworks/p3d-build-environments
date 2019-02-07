@@ -1,0 +1,9 @@
+- name: Run setup tasks
+  hosts: all
+  tasks:
+  - include_tasks: tasks/linux.yml
+    when: ansible_system == "Linux"
+
+  - include_tasks: tasks/windows.yml
+    when: ansible_system == "Windows"
+
