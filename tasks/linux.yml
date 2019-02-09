@@ -21,3 +21,15 @@
       libXxf86dga-devel, libXcursor-devel, bison, flex, freetype-devel,
       libvorbis-devel, libjpeg-turbo-devel, openal-soft-devel, ode-devel,
     ]
+
+- name: Install packages (Alpine)
+  when: ansible_distribution == "Alpine"
+  become: true
+  apk:
+    update_cache: yes
+    name: [
+      build-base, clang, cmake, git, python2-dev, python3-dev, zlib-dev,
+      openssl-dev, libx11-dev, mesa-dev, libxrandr-dev,
+      libxxf86dga-dev, libxcursor-dev, bison, flex, freetype-dev,
+      libvorbis-dev, libjpeg-turbo-dev, openal-soft-dev,
+    ]
