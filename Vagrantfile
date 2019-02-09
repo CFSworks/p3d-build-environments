@@ -10,6 +10,15 @@ Vagrant.configure("2") do |config|
     trusty.vm.box = "ubuntu/trusty64"
   end
 
+  config.vm.define "fedora" do |fedora|
+    fedora.vm.box = "generic/fedora29"
+  end
+
+  config.vm.define "alpine" do |alpine|
+    alpine.vm.box = "generic/alpine38"
+    alpine.vm.provision "bootstrap", type: "shell", preserve_order: true, inline: "apk add python"
+  end
+
   config.vm.define "win7" do |win7|
     win7.vm.box = "ferventcoder/win7pro-x64-nocm-lite"
   end
@@ -29,6 +38,7 @@ Vagrant.configure("2") do |config|
     vb.memory = "4096"
   end
 
+  config.vm.provision "bootstrap", type: "shell", preserve_order: true, inline: ""
   config.vm.provision :ansible do |ansible|
     ansible.compatibility_mode = "2.0"
     ansible.groups = {
