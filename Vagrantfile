@@ -31,13 +31,18 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision :ansible do |ansible|
     ansible.compatibility_mode = "2.0"
-    ansible.raw_arguments = [
-      "-e ansible_winrm_scheme=http",
-      "-e ansible_winrm_operation_timeout_sec=60",
-      "-e ansible_winrm_read_timeout_sec=120",
-      "-e ansible_become_password=vagrant",
-      "-e ansible_become_user=vagrant"
-    ]
+    ansible.groups = {
+      "windows" => [
+        "win7",
+      ],
+      "windows:vars" => {
+        "ansible_winrm_scheme" => "http",
+        "ansible_winrm_operation_timeout_sec" => "60",
+        "ansible_winrm_read_timeout_sec" => "120",
+        "ansible_become_password" => "vagrant",
+        "ansible_become_user" => "vagrant",
+      }
+    }
 
     ansible.playbook = "vagrant-playbook.yml"
   end
