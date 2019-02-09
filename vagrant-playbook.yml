@@ -7,3 +7,5 @@
   - include_tasks: tasks/windows.yml
     when: ansible_system == "Windows"
 
+  - include_tasks: tasks/freebsd.yml
+    when: ansible_system == "FreeBSD"

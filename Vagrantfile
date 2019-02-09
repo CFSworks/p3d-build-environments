@@ -51,7 +51,14 @@ Vagrant.configure("2") do |config|
         "ansible_winrm_read_timeout_sec" => "120",
         "ansible_become_password" => "vagrant",
         "ansible_become_user" => "vagrant",
-      }
+      },
+
+      "freebsd" => [
+        "freebsd11", "freebsd12",
+      ],
+      "freebsd:vars" => {
+        "ansible_python_interpreter" => "/usr/local/bin/python2.7",
+      },
     }
 
     ansible.playbook = "vagrant-playbook.yml"
