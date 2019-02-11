@@ -2,7 +2,7 @@
   become: true
   pkgng:
     name: [
-      cmake, py27-pytest, py36-pytest, git,
-      pkgconf, png, jpeg-turbo, tiff, freetype2, eigen, squish, openal,
+      cmake, py27-pytest, py36-pytest, git, bison,
+      pkgconf, png, jpeg-turbo, tiff, freetype2, harfbuzz, eigen, squish, openal,
       opusfile, libvorbis, libX11, mesa-libs, ode, bullet, assimp, openexr,
     ]
