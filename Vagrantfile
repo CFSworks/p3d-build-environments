@@ -20,7 +20,8 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.define "win7" do |win7|
-    win7.vm.box = "ferventcoder/win7pro-x64-nocm-lite"
+    win7.vm.box = "opentable/win-7-ultimate-amd64-nocm"
+    win7.vm.communicator = "winrm"
   end
 
   config.vm.define "freebsd11" do |freebsd11|

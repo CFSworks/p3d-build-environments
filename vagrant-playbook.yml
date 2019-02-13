@@ -5,7 +5,17 @@
     when: ansible_system == "Linux"
 
   - include_tasks: tasks/windows.yml
-    when: ansible_system == "Windows"
+    when: ansible_os_family == "Windows"
 
   - include_tasks: tasks/freebsd.yml
     when: ansible_system == "FreeBSD"
+
+  handlers:
+  - name: Perform reboot (Windows)
+    listen: reboot
+    win_reboot:
+    when: ansible_os_family == "Windows"
+  - name: Perform reboot (non-Windows)
+    listen: reboot
+    reboot:
+    when: ansible_os_family != "Windows"

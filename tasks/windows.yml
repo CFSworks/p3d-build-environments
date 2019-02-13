@@ -160,23 +160,3 @@
   win_file:
     path: C:\tools\llvm-vsix
     state: absent
-
-- name: Install updates
-  win_updates: reboot=yes
-  register: update_result
-- name: Reboot after updating
-  win_reboot: reboot_timeout=3600
-  when: update_result.changed
-
-- name: Install SDelete
-  win_chocolatey: name=sdelete state=present ignore_checksums=yes
-  become: yes
-  become_method: runas
-- name: Cleanup WinSXS update debris
-  win_shell: Dism.exe /online /Cleanup-Image /StartComponentCleanup /ResetBase
-- name: Defragment
-  win_defrag:
-    include_volumes: C
-    priority: normal
-- name: Zero free space
-  win_shell: 'sdelete -z c:'
