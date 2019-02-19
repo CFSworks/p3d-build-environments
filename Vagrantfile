@@ -32,6 +32,28 @@ Vagrant.configure("2") do |config|
     freebsd12.vm.box = "generic/freebsd12"
   end
 
+  config.vm.define "macos7" do |macos7|
+    macos7.vm.box = "tuupola/osx-lion-10.7-xcode"
+    $script = <<-SCRIPT
+      [ ! -f /etc/paths.orig ] \
+        && sudo sed -i.orig '1s;^;/usr/local/sbin\'$'\n;' /etc/paths \
+        && sudo sed -i.edit1 '1s;^;/usr/local/bin\'$'\n;' /etc/paths \
+        && PATH="/usr/local/bin:/usr/local/sbin::${PATH}" \
+        && export PATH;
+      [ ! -f /usr/local/bin/brew ] && ruby \
+        -e "$(curl -fsSkL raw.github.com/mistydemeo/tigerbrew/go/install)" \
+        </dev/null \
+      || echo "Tigerbrew is already installed...";
+      brew doctor </dev/null;
+      brew install curl && brew link --force curl || \
+        echo "!!!! Something went wrong during install of curl, retrying... !!!!!" \
+        && brew install curl && brew link --force curl \
+        || echo "!!!! Unable to install curl !!!!!";
+      brew install --build-from-source git;
+      brew update;
+    SCRIPT
+    macos7.vm.provision "bootstrap", type: "shell", preserve_order: true, privileged: false, inline: $script
+  end
 
 
   config.vm.provider "virtualbox" do |vb|
