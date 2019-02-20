@@ -32,6 +32,10 @@ Vagrant.configure("2") do |config|
     freebsd12.vm.box = "generic/freebsd12"
   end
 
+  config.vm.define "macos14" do |macos14|
+    macos14.vm.box = "yzgyyang/macOS-10.14"
+  end
+
   config.vm.define "macos7" do |macos7|
     macos7.vm.box = "tuupola/osx-lion-10.7-xcode"
     $script = <<-SCRIPT
@@ -52,7 +56,7 @@ Vagrant.configure("2") do |config|
       brew install --build-from-source git;
       brew update;
     SCRIPT
-    macos7.vm.provision "bootstrap", type: "shell", preserve_order: true, privileged: false, inline: $script
+    macos7.vm.provision "bootstrap", type: "shell", privileged: false, inline: $script
   end
 
 

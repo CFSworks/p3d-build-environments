@@ -1,0 +1,11 @@
+- name: Install packages
+  hombrew:
+    name: [
+      cmake, git,
+    ]
+  pip:
+    executable: pip
+    name: pytest
+  pip:
+    executable: pip3
+    name: pytest
