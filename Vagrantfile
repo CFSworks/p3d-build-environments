@@ -34,10 +34,12 @@ Vagrant.configure("2") do |config|
 
   config.vm.define "macos14" do |macos14|
     macos14.vm.box = "yzgyyang/macOS-10.14"
+    macos14.vm.synced_folder ".", "/vagrant", disabled: true
   end
 
   config.vm.define "macos7" do |macos7|
     macos7.vm.box = "tuupola/osx-lion-10.7-xcode"
+    macos7.vm.synced_folder ".", "/vagrant", disabled: true
     $script = <<-SCRIPT
       [ ! -f /etc/paths.orig ] \
         && sudo sed -i.orig '1s;^;/usr/local/sbin\'$'\n;' /etc/paths \

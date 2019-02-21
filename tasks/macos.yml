@@ -1,11 +1,17 @@
 - name: Install packages
-  hombrew:
+  homebrew:
     name: [
-      cmake, git,
+      cmake, git, python@2, python
     ]
+- name: Install pytest in Python 2.7
   pip:
-    executable: pip
+    executable: /usr/local/bin/pip
     name: pytest
+- name: Install pytest in Python 3.7
   pip:
-    executable: pip3
+    executable: /usr/local/bin/pip3
     name: pytest
+- name: Creating user builder with password builder
+  user:
+    name: builder
+    password: builder
