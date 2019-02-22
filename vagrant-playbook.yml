@@ -10,6 +10,9 @@
   - include_tasks: tasks/freebsd.yml
     when: ansible_system == "FreeBSD"
 
+  - include_tasks: tasks/macos.yml
+    when: ansible_system == "Darwin"
+
   handlers:
   - name: Perform reboot (Windows)
     listen: reboot
