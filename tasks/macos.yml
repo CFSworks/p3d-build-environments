@@ -1,0 +1,65 @@
+- name: Install cmake and git
+  homebrew:
+    name: [
+      cmake, git,
+    ]
+
+- name: Check Python 2 Version
+  command: /usr/local/bin/python --version
+  register: py2version
+  ignore_errors: true
+
+- name: Check Python 3 Version
+  command: /usr/local/bin/python3 --version
+  register: py3version
+  ignore_errors: true
+
+- debug:
+    msg: "Installed Python: {{ py2version }} / {{ py3version }}"
+  ignore_errors: true
+
+- name: Download Python 2.7.15 from python.org
+  get_url:
+    url: https://www.python.org/ftp/python/2.7.15/python-2.7.15-macosx10.6.pkg
+    dest: /Users/vagrant/python-2.7.pkg
+  when: (py2version.stderr is not defined) or (py2version.stderr is defined and py2version.stderr != "Python 2.7.15")
+
+- name: Download Python 3.7.2 from python.org
+  get_url:
+    url: https://www.python.org/ftp/python/3.7.2/python-3.7.2-macosx10.6.pkg
+    dest: /Users/vagrant/python-3.7.pkg
+  when: (py3version.stdout is not defined) or (py3version.stdout is defined and py3version.stdout != "Python 3.7.2")
+
+- name: Install Python 2.7
+  become: true
+  command: installer -pkg /Users/vagrant/python-2.7.pkg -target /
+  when: (py2version.stderr is not defined) or (py2version.stderr is defined and py2version.stderr != "Python 2.7.15")
+
+- name: Install Python 3.7
+  become: true
+  command: installer -pkg /Users/vagrant/python-3.7.pkg -target /
+  when: (py3version.stdout is not defined) or (py3version.stdout is defined and py3version.stdout != "Python 3.7.2")
+
+- name: Install pytest in Python 2.7
+  pip:
+    executable: /usr/local/bin/pip
+    name: pytest
+
+- name: Install pytest in Python 3.7
+  pip:
+    executable: /usr/local/bin/pip3
+    name: pytest
+
+- name: Clone old MacOSX SDKs from github and place them in /Developer/SDKs
+  become: true
+  git:
+    repo: 'https://github.com/AaronWallace/MacOSX_SDKs.git'
+    dest: /Developer/SDKs
+  when: ansible_facts['distribution_version'].find('10.14') != -1
+
+- name: Creating user "builder" with password "builder"
+  become: true
+  user:
+    name: builder
+    password: builder
+    home: /Users/builder
